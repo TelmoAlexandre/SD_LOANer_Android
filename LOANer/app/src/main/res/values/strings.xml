@@ -1,6 +1,14 @@
 <resources>
     <string name="app_name">LOANer</string>
     <string name="welcome">Welcome</string>
+    <string name="deposit">Deposit</string>
+    <string name="amount">Amount</string>
+    <string name="withdrawal">Withdrawal</string>
+    <string name="requestLoan">Request a Loan</string>
+    <string name="loanPayment">Loan Payment</string>
     <string name="login">Login</string>
-    <string name="password">Password...</string>
+    <string-array name="client_spinner">
+        <item>Telmo</item>
+        <item>Jose Manuel</item>
+    </string-array>
 </resources>
