@@ -6,12 +6,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
@@ -19,6 +23,7 @@ public class MovActivity extends AppCompatActivity {
 
     Button btnDeposit, btnWithdrawal, btnLoanPayment, btnRequestLoan;
     TextView lblFeedback, txtAmount;
+    String ip = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +32,12 @@ public class MovActivity extends AppCompatActivity {
 
         // preparar elementos do layout
         bindLayoutElements();
+
+        // Receber o ip da main activity
+        if (getIntent().hasExtra("ip"))
+        {
+            ip = getIntent().getExtras().getString("ip");
+        }
 
         btnDeposit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,6 +86,8 @@ public class MovActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(String... str) {
 
+
+
             // Recolhe as informações do layout
             JsonObject json = new JsonObject();
             json.addProperty("type",str[0]);
@@ -82,7 +95,21 @@ public class MovActivity extends AppCompatActivity {
 
             try
             {
-                sendJson(json);
+
+                Socket sckt = new Socket(ip, 21_150);
+                send(sckt, json);
+
+                // Aguarda resposta
+                BufferedReader br = new BufferedReader(new InputStreamReader(sckt.getInputStream()));
+                String content = br.readLine();
+                JsonObject jsonReceived = new JsonParser().parse(content).getAsJsonObject();
+                String status = jsonReceived.get("response").getAsString();
+
+                // Oferece feedback ao utilizador dependendo do sucesso do movimento.
+                lblFeedback.setText(str[0]);
+                lblFeedback.append(
+                        (status.equals("success")) ? " was successful." : " failed."
+                );
             }
             catch (Exception ex)
             {
@@ -93,15 +120,16 @@ public class MovActivity extends AppCompatActivity {
         }
     }
 
-    private void sendJson(JsonObject json) throws Exception
+    private void send(Socket sckt, JsonObject json) throws Exception
     {
-        Socket sckt = new Socket("192.168.1.100", 21_150);
+        if (!ip.equals("")){
 
-        DataOutputStream out = new DataOutputStream(sckt.getOutputStream());
-        BufferedWriter printer = new BufferedWriter(new OutputStreamWriter(out));
+            DataOutputStream out = new DataOutputStream(sckt.getOutputStream());
+            BufferedWriter printer = new BufferedWriter(new OutputStreamWriter(out));
 
-        printer.write(json.toString());
-        printer.newLine();
-        printer.flush();
+            printer.write(json.toString());
+            printer.newLine();
+            printer.flush();
+        }
     }
 }
