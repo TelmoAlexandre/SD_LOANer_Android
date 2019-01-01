@@ -1,12 +1,10 @@
 package com.alex.telmo.loaner;
 
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.gson.JsonObject;
@@ -81,12 +79,14 @@ public class MovActivity extends AppCompatActivity {
         txtAmount = findViewById(R.id.txtAmount);
     }
 
+    /**
+     * Class que gere a criação e envio de JSON.
+     *
+     */
     private class sendJSON extends AsyncTask<String, Void ,Void> {
 
         @Override
         protected Void doInBackground(String... str) {
-
-
 
             // Recolhe as informações do layout
             JsonObject json = new JsonObject();
@@ -95,15 +95,12 @@ public class MovActivity extends AppCompatActivity {
 
             try
             {
-
+                // Cria socket e envia o Json
                 Socket sckt = new Socket(ip, 21_150);
-                send(sckt, json);
+                sendJson(sckt, json);
 
-                // Aguarda resposta
-                BufferedReader br = new BufferedReader(new InputStreamReader(sckt.getInputStream()));
-                String content = br.readLine();
-                JsonObject jsonReceived = new JsonParser().parse(content).getAsJsonObject();
-                String status = jsonReceived.get("response").getAsString();
+                // Aguarda resposta em Json
+                String status = receiveJson(sckt).get("response").getAsString();
 
                 // Oferece feedback ao utilizador dependendo do sucesso do movimento.
                 lblFeedback.setText(str[0]);
@@ -120,7 +117,28 @@ public class MovActivity extends AppCompatActivity {
         }
     }
 
-    private void send(Socket sckt, JsonObject json) throws Exception
+    /**
+     * Retorna um objecto JSON recebendo-o por um socket pré-criado.
+     *
+     * @param sckt
+     * @return
+     * @throws Exception
+     */
+    private JsonObject receiveJson(Socket sckt) throws Exception
+    {
+        BufferedReader br = new BufferedReader(new InputStreamReader(sckt.getInputStream()));
+        String content = br.readLine();
+        return new JsonParser().parse(content).getAsJsonObject();
+    }
+
+    /**
+     * Envia um objecto JSON por um socket pré-criado.
+     *
+     * @param sckt
+     * @param json
+     * @throws Exception
+     */
+    private void sendJson(Socket sckt, JsonObject json) throws Exception
     {
         if (!ip.equals("")){
 

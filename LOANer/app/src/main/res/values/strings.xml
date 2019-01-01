@@ -9,6 +9,7 @@
     <string name="login">Login</string>
     <string name="password">Password</string>
     <string name="manageAccount">Manage your account</string>
+    <string name="checkMov">Check Movements</string>
     <string-array name="loaner_IP">
         <item>192.168.1.100</item>
         <item>193.137.5.238</item>

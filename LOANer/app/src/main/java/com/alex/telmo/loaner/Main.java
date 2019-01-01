@@ -1,7 +1,10 @@
 package com.alex.telmo.loaner;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
@@ -50,14 +53,21 @@ public class Main extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                psw = getPasswordHash(txtPassword.getText().toString());
+                // Caso exista acesso à internet
+                if (haveNetworkConnection())
+                {
+                    // Transforma a password introduzida pelo cliente num hash
+                    psw = getPasswordHash(txtPassword.getText().toString());
 
-                // Cria o Json
-                json = new JsonObject();
-                json.addProperty("type" , "AUTHENTICATE");
-                json.addProperty("password", psw);
+                    // Cria o Json
+                    json = new JsonObject();
+                    json.addProperty("type" , "AUTHENTICATE");
+                    json.addProperty("password", psw);
 
-                new sendJSON().execute();
+                    new sendJSON().execute();
+                }else{
+                    lblFeedback.setText("Internet connection needed.");
+                }
             }
         });
     }
@@ -73,6 +83,12 @@ public class Main extends AppCompatActivity {
         spIP = findViewById(R.id.spIP);
     }
 
+    /**
+     * Recebe uma password em plain text e transforma-a num hash code.
+     *
+     * @param psw
+     * @return
+     */
     @TargetApi(Build.VERSION_CODES.O)
     private String getPasswordHash(String psw)
     {
@@ -92,6 +108,10 @@ public class Main extends AppCompatActivity {
         return null;
     }
 
+    /**
+     * Envia o JSON para o IP escolhido pelo utilizador
+     *
+     */
     private class sendJSON extends AsyncTask<String, Void ,Void> {
 
         @Override
@@ -150,10 +170,36 @@ public class Main extends AppCompatActivity {
         }
     }
 
+    /**
+     * Abre a actividade de movimentos de conta.
+     *
+     */
     private void openMovActivity()
     {
         Intent movActivity = new Intent(getApplicationContext(), MovActivity.class);
         movActivity.putExtra("ip", spIP.getSelectedItem().toString());
         startActivity(movActivity);
+    }
+
+    /**
+     * Verifica se exsite conexão à Internet.
+     *
+     * @return
+     */
+    private boolean haveNetworkConnection() {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
+        for (NetworkInfo ni : netInfo) {
+            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                if (ni.isConnected())
+                    haveConnectedWifi = true;
+            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                if (ni.isConnected())
+                    haveConnectedMobile = true;
+        }
+        return haveConnectedWifi || haveConnectedMobile;
     }
 }

@@ -112,4 +112,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/loaner_logo" />
+
 </android.support.constraint.ConstraintLayout>
