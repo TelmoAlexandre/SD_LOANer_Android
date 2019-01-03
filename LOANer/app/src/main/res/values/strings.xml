@@ -10,6 +10,7 @@
     <string name="password">Password</string>
     <string name="manageAccount">Manage your account</string>
     <string name="checkMov">Check Movements</string>
+    <string name="total_money">You have 0.0 €</string>
     <string-array name="loaner_IP">
         <item>192.168.1.100</item>
         <item>193.137.5.238</item>

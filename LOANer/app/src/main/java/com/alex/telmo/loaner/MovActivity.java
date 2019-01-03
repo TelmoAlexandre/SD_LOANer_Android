@@ -1,10 +1,14 @@
 package com.alex.telmo.loaner;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.google.gson.JsonObject;
@@ -20,8 +24,9 @@ import java.net.Socket;
 public class MovActivity extends AppCompatActivity {
 
     Button btnDeposit, btnWithdrawal, btnLoanPayment, btnRequestLoan;
-    TextView lblFeedback, txtAmount;
-    String ip = "";
+    ImageButton btnGetMoney;
+    TextView lblFeedback, txtAmount, txtTotalMoney;
+    String ip = "", totalmoney = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,33 +42,62 @@ public class MovActivity extends AppCompatActivity {
             ip = getIntent().getExtras().getString("ip");
         }
 
+        // Receber o dinherio do cliente da main activity
+        if (getIntent().hasExtra("totalMoney"))
+        {
+            txtTotalMoney.setText("You have ");
+            txtTotalMoney.append(getIntent().getExtras().getString("totalMoney"));
+            txtTotalMoney.append(" €");
+        }
+
         btnDeposit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new sendJSON().execute("DEPOSIT");
+                performMovement("DEPOSIT");
             }
         });
 
         btnWithdrawal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new sendJSON().execute("WITHDRAWAL");
+                performMovement("WITHDRAWAL");
             }
         });
 
         btnRequestLoan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new sendJSON().execute("LOAN");
+                performMovement("LOAN");
             }
         });
 
         btnLoanPayment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new sendJSON().execute("LOANPAYMENT");
+                performMovement("LOANPAYMENT");
             }
         });
+
+        btnGetMoney.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    performMovement("GET_TOTAL_MONEY");
+            }
+        });
+    }
+
+    /**
+     * Verifica se existe conexão à Internet e, caso exista, inicia a Thread que envia JSON.
+     *
+     * @param str
+     */
+    private void performMovement(String str)
+    {
+        if (haveNetworkConnection()) {
+            new sendJSON().execute(str);
+        } else {
+            lblFeedback.setText("Internet connection needed.");
+        }
     }
 
     /**
@@ -77,6 +111,8 @@ public class MovActivity extends AppCompatActivity {
         btnRequestLoan = findViewById(R.id.btnRequestLoan);
         lblFeedback = findViewById(R.id.lblFeedback);
         txtAmount = findViewById(R.id.txtAmount);
+        txtTotalMoney = findViewById(R.id.txtTotalMoney);
+        btnGetMoney = findViewById(R.id.btnGetMoney);
     }
 
     /**
@@ -97,16 +133,25 @@ public class MovActivity extends AppCompatActivity {
             {
                 // Cria socket e envia o Json
                 Socket sckt = new Socket(ip, 21_150);
-                sendJson(sckt, json);
+                sendJsonObject(sckt, json);
 
                 // Aguarda resposta em Json
-                String status = receiveJson(sckt).get("response").getAsString();
+                JsonObject receivedJson = receiveJson(sckt);
+                String response = receivedJson.get("response").getAsString();
 
-                // Oferece feedback ao utilizador dependendo do sucesso do movimento.
-                lblFeedback.setText(str[0]);
-                lblFeedback.append(
-                        (status.equals("success")) ? " was successful." : " failed."
-                );
+                if (response.equals("syncMoney"))
+                {
+                    response = "You have " + receivedJson.get("totalMoney").getAsString() + " €";
+                    txtTotalMoney.setText(response);
+                }
+                else
+                {
+                    // Oferece feedback ao utilizador dependendo do sucesso do movimento.
+                    lblFeedback.setText(str[0]);
+                    lblFeedback.append(
+                            (response.equals("success")) ? " was successful." : " failed."
+                    );
+                }
             }
             catch (Exception ex)
             {
@@ -138,7 +183,7 @@ public class MovActivity extends AppCompatActivity {
      * @param json
      * @throws Exception
      */
-    private void sendJson(Socket sckt, JsonObject json) throws Exception
+    private void sendJsonObject(Socket sckt, JsonObject json) throws Exception
     {
         if (!ip.equals("")){
 
@@ -149,5 +194,27 @@ public class MovActivity extends AppCompatActivity {
             printer.newLine();
             printer.flush();
         }
+    }
+
+    /**
+     * Verifica se exsite conexão à Internet.
+     *
+     * @return
+     */
+    private boolean haveNetworkConnection() {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
+        for (NetworkInfo ni : netInfo) {
+            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                if (ni.isConnected())
+                    haveConnectedWifi = true;
+            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                if (ni.isConnected())
+                    haveConnectedMobile = true;
+        }
+        return haveConnectedWifi || haveConnectedMobile;
     }
 }

@@ -38,7 +38,7 @@ public class Main extends AppCompatActivity {
     private Spinner spIP;
     private TextView lblFeedback, txtPassword;
 
-    String clientName, psw;
+    String psw;
     JsonObject json;
 
     @Override
@@ -139,7 +139,7 @@ public class Main extends AppCompatActivity {
 
                 if (status.equals("success"))
                 {
-                    openMovActivity();
+                    openMovActivity(json);
                     lblFeedback.setText("Welcome Telmo");
                 }else{
                     lblFeedback.setText("Authentication has failed.");
@@ -174,10 +174,11 @@ public class Main extends AppCompatActivity {
      * Abre a actividade de movimentos de conta.
      *
      */
-    private void openMovActivity()
+    private void openMovActivity(JsonObject json)
     {
         Intent movActivity = new Intent(getApplicationContext(), MovActivity.class);
         movActivity.putExtra("ip", spIP.getSelectedItem().toString());
+        movActivity.putExtra("totalMoney", json.get("totalMoney").getAsString());
         startActivity(movActivity);
     }
 
